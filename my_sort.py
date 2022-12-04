@@ -136,7 +136,7 @@ def my_sort(array: list, reverse: bool = False, key: Optional[Callable] = None,
 
         return cur, size_cur
 
-    def _sift_down(root_index, tree_size) -> None:
+    def _sift_down(root_index: int, tree_size: int) -> None:
         """
         "Исправляет" дерево размера tree_size с корнем root_index в куче
         :param root_index: индекс корня
@@ -163,7 +163,7 @@ def my_sort(array: list, reverse: bool = False, key: Optional[Callable] = None,
                 cur = left
                 tree_size = tree_size - 1
 
-    def _dequeue_max(heap_sz) -> None:
+    def _dequeue_max(heap_sz: int) -> None:
         """
         Удаляет максимумы.
         :param heap_sz: размер кучи.
