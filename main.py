@@ -1,6 +1,9 @@
 import argparse
 import textwrap
 import os
+import time
+
+import pygame as pg
 
 from typing import Union
 from random import shuffle
@@ -33,7 +36,23 @@ def reading_file(file_name: str = "") -> Union[str, bool]:
     return string
 
 
-def parse_args():
+def sort_visualization(array: list, reverse: bool) -> None:
+    """
+    Функция отрисовки процесса сортировки
+    :param array:
+    :param reverse:
+    :return:
+    """
+    pg.init()
+    width, height = 800, 600
+
+    # Инициализирует окно
+    screen = pg.display.set_mode((width, height))
+    pg.display.set_caption("SmoothSort")
+    time.sleep(100)
+
+
+def parse_args() -> bool:
     """Обработка параметров командной строки"""
     # Осуществляем разбор аргументов командной строки
     parser = argparse.ArgumentParser(description="Плавная сортировка")
@@ -90,6 +109,9 @@ def parse_args():
             # Функция shuffle перемешивает изменяемую последовательность
             # случайным образом
             shuffle(array)
+
+    if args.visualize:
+        sort_visualization(array, args.reverse)
 
     sorted_array = my_sort.my_sort(array, args.reverse)
 
