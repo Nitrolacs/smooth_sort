@@ -4,7 +4,6 @@ import unittest
 
 import my_sort  # pylint: disable=E0401
 
-
 TEST_NUMBER = [
     [],
     [1],
@@ -15,7 +14,6 @@ TEST_NUMBER = [
     [-5, 0, 9, -999, 874, 35, -4, -5, 0],
     [1, 1, 1],
 ]
-
 
 TEST_STR = [
     [],
@@ -31,6 +29,7 @@ TEST_STR = [
 
 class TestSort(unittest.TestCase):
     """Тест-кейс модуля my_sort"""
+
     def test_sort_number_increase(self):
         """Тест функции сортировки числовых данных по возрастанию"""
         for data in TEST_NUMBER:
@@ -38,7 +37,7 @@ class TestSort(unittest.TestCase):
                 self.assertEqual(my_sort.my_sort(data), sorted(data))
 
     def test_sort_number_decrease(self):
-        """Тест функции сортировки числовых данных по невозрастанию"""
+        """Тест функции сортировки числовых данных по не возрастанию"""
         for data in TEST_NUMBER:
             with self.subTest():
                 self.assertEqual(
@@ -53,7 +52,7 @@ class TestSort(unittest.TestCase):
                 self.assertEqual(my_sort.my_sort(data), sorted(data))
 
     def test_sort_str_decrease(self):
-        """Тест функции сортировки строковых данных по невозрастанию"""
+        """Тест функции сортировки строковых данных по не возрастанию"""
         for data in TEST_STR:
             with self.subTest():
                 self.assertEqual(

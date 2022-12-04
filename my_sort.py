@@ -1,4 +1,7 @@
-"""Шаблон модуля my_sort"""
+"""
+Модуль плавной сортировки
+"""
+
 from typing import Optional, Callable
 
 
@@ -23,8 +26,8 @@ def my_sort(array: list, reverse: bool = False, key: Optional[Callable] = None,
     Плавная сортировка.
     :param array: сортируемый список
     :param reverse: флаг, определяющий вариант сортировки.
-                    False - по неубыванию
-                    True - по невозрастанию
+                    False - по не убыванию
+                    True - по не возрастанию
     :param key: функция, вычисляющая значение, на основе которого будет
                 производится сортировка. Должна принимать один аргумент и
                 возвращать значение.
@@ -39,63 +42,54 @@ def my_sort(array: list, reverse: bool = False, key: Optional[Callable] = None,
     # Куча будет храниться в виде списка деревьев Леонардо
     heap = []
 
-    def create_heap() -> None:
+    def _add_new_root() -> None:
+        """
+        Обновляет список размера деревьев Леонардо в лесу после того, как
+        новый узел был добавлен.
+        :return: None
+        """
+
+        # Если лес пустой, то добавляем дерево 1 порядка.
+
+        if not heap:
+            heap.append(1)
+
+        # Если у прошлых деревьев смежный порядок (например, 1 и 2,
+        # 4 и 5, 8 и 9), то объединяем их в одно большое дерево;
+        # Новая вершина - корень дерева.
+
+        elif len(heap) >= 2 and heap[-2] == heap[-1] + 1:
+            heap.pop()
+            heap[-1] += 1
+
+        # Если первое условие не выполняется и порядок последнего
+        # дерева равен 1, то добавляем дерево 0-го порядка.
+
+        elif heap[-1] == 1:
+            heap.append(0)
+
+        # Иначе - добавляем дерево 1-го порядка.
+        else:
+            heap.append(1)
+
+    def _create_heap() -> None:
 
         # Создание первоначальной кучи
         # Очередной элемент или объединяет две предыдущие кучи
         # или добавляет новую кучу из одного узла (дерево первого порядка)
         for heap_end in range(len(array)):
+            # Обновляем порядки деревьев
+            _add_new_root()
 
-            # Если у прошлых деревьев смежный порядок (например, 1 и 2,
-            # 4 и 5, 8 и 9), то объединяем их в одно большое дерево;
-            # Новая вершина - корень дерева.
+            # Меняем местами корневые узлы деревьев.
+            # Возвращает [индекс кучи, индекс размера]
+            new_index, size_index = _fix_roots(heap_end, len(heap) - 1)
 
-            if not heap:
-                heap.append(1)
+            # "Исправляет" дерево путем просейки.
+            _sift_down(new_index, heap[size_index])
 
-            elif len(heap) >= 2 and heap[-2] == heap[-1] + 1:
-                heap.pop()
-                heap[-1] += 1
-
-            # Если первое условие не выполняется и порядок последнего
-            # дерева равен 1, то добавляем дерево 0-го порядка.
-
-            else:
-                if heap[-1] == 1:
-                    heap.append(0)
-
-                # Иначе - добавляем дерево 1-го порядка.
-                else:
-                    heap.append(1)
-
-            new_index, size_index = fix_roots(heap_end, len(heap) - 1)
-            sift_down(new_index, heap[size_index])
-
-    """
-    # updates the list of sizes of leonardo trees in a forest after a new node is
-    # added
-    def _add_new_root(size_list):
-        # case 1: Empty forest. Add L_1 tree.
-        if len(size_list) == 0:
-            size_list.append(1)
-        # case 2: Forest with two rightmost trees differing in size by 1.
-        #         Replace the last two trees of size L_k-1 and L_k-2 by a single
-        #         tree of size L_k.
-        elif len(size_list) > 1 and size_list[-2] == size_list[-1] + 1:
-            size_list[-2] = size_list[-2] + 1
-            del size_list[-1]
-        # case 3: Add a new tree, either L_1 or L_0
-        else:
-            # case 1: Rightmost tree is an L_1 tree. Add L_0 tree.
-            if size_list[-1] == 1:
-                size_list.append(0)
-            # case 2: Rightmost tree is not an L_1 tree. Add L_1 tree.
-            else:
-                size_list.append(1)
-    """
-
-    def fix_roots(start_heap_index: int,
-                  start_size_index: int):
+    def _fix_roots(start_heap_index: int,
+                   start_size_index: int) -> (int, int):
         """
         Изменяет 'кучу' на месте, предполагая существование кучи Леонардо
         с деревьями, имеющими размеры в порядке,
@@ -118,9 +112,9 @@ def my_sort(array: list, reverse: bool = False, key: Optional[Callable] = None,
             if cmp(key(array[next_element]), key(array[cur])) != reverse:
                 break
 
-            # stop if the next root is not greater than both children of the
-            # current root, if those children exist, i.e. the size of the
-            # current tree is not 0 or 1.
+            # Прерываем цикл, если следующий корень не больше, чем оба дочерних
+            # элемента текущего корня и если размер текущего дерева не равен 0
+            # или 1
 
             if heap[size_cur] > 1:
                 right = cur - 1
@@ -131,63 +125,73 @@ def my_sort(array: list, reverse: bool = False, key: Optional[Callable] = None,
                             key(array[left])) != reverse:
                     break
 
-            # swap the current root with the next root
+            # Меняем места текущий корень со следующим корнем
             temp = array[cur]
             array[cur] = array[next_element]
             array[next_element] = temp
-            # continue, starting with the next root as the current root
+
+            # Продолжаем, начиная со следующего узла как с текущего
             size_cur = size_cur - 1
             cur = next_element
 
         return cur, size_cur
 
-    # Fixes the tree of size tree_size rooted at root_idx in heap, where heap is otherwise a valid heap
-    def sift_down(root_index, tree_size):
+    def _sift_down(root_index, tree_size) -> None:
+        """
+        "Исправляет" дерево размера tree_size с корнем root_index в куче
+        :param root_index: индекс корня
+        :param tree_size: размер дерева
+        :return: None
+        """
         cur = root_index
-        # continue iterating until there are no child nodes
+        # Продолжаем итерацию, пока не останется дочерних узлов
         while tree_size > 1:
             right = cur - 1
             left = cur - 1 - get_leonardo_number(tree_size - 2)
-            # the root is at least as large as both children
+            # Корень не меньше размера обоих потомков
             if cmp(key(array[left]), key(array[cur])) != reverse and \
                     cmp(key(array[right]), key(array[cur])) != reverse:
                 break
-            # the right child is at least as large as the left child
+            # Правый дочерний элемент не меньше левого дочернего
             elif cmp(key(array[left]), key(array[right])) != reverse:
                 array[cur], array[right] = array[right], array[cur]
                 cur = right
                 tree_size = tree_size - 2
-            # the left child is the greatest of the three
+            # Левый потомок самый большой из трёх
             else:
                 array[cur], array[left] = array[left], array[cur]
                 cur = left
                 tree_size = tree_size - 1
 
-    # removes the max value from the graph
-    def _dequeue_max(heap_size):
+    def _dequeue_max(heap_sz) -> None:
+        """
+        Удаляет максимумы.
+        :param heap_sz: размер кучи.
+        :return:
+        """
         removed_size = heap.pop()
-        # case 1: rightmost tree has a single node
+        # Если самое правое дерево имеет один узел
         if removed_size == 0 or removed_size == 1:
-            pass  # already removed
-        # case 2: rightmost tree has two children
+            pass  # Уже удалено
+        # Если у самого правого дерева двое детей
         else:
-            # add sizes back
+            # Добавляем порядки обратно
             heap.append(removed_size - 1)
             heap.append(removed_size - 2)
-            # calculate indices of left and right children
-            left_idx = heap_size - get_leonardo_number(heap[-1]) - 1
-            right_idx = heap_size - 1
+            # Вычисляем индексы левого и правого потомка
+            left_idx = heap_sz - get_leonardo_number(heap[-1]) - 1
+            right_idx = heap_sz - 1
             left_size_idx = len(heap) - 2
             right_size_idx = len(heap) - 1
-            # fix left child
-            idx, size_idx = fix_roots(left_idx, left_size_idx)
-            sift_down(idx, heap[size_idx])
-            # fix right child
-            idx, size_idx = fix_roots(right_idx,
+            # "Исправляем левого потомка"
+            idx, size_idx = _fix_roots(left_idx, left_size_idx)
+            _sift_down(idx, heap[size_idx])
+            # "Исправляем правого потомка"
+            idx, size_idx = _fix_roots(right_idx,
                                        right_size_idx)
-            sift_down(idx, heap[size_idx])
+            _sift_down(idx, heap[size_idx])
 
-    create_heap()
+    _create_heap()
     for heap_size in range(len(array) - 1, -1, -1):
         _dequeue_max(heap_size)
 
