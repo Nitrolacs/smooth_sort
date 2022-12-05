@@ -89,10 +89,14 @@ def visualize_array(array: list, heap_size: int, length: int, width: int,
         pg.draw.rect(screen, cur_color, (norm_x * index, norm_y,
                                          norm_w, norm_h))
 
-        """
-        pg.draw.rect(screen, (0, 0, 0), (norm_x * index, norm_y - height,
-                                        norm_w, norm_h))
-        """
+        if value > 0:
+            sqrt_y = norm_y - norm_w
+        else:
+            sqrt_y = norm_y + norm_h - norm_w
+
+        pg.draw.rect(screen, (0, 0, 0),
+                     (norm_x * index, sqrt_y, norm_w, norm_w))
+
         pg.draw.line(screen, (255, 255, 255),
                      (0, zero_h), (width, zero_h), 2)
         pg.display.update()
@@ -404,7 +408,8 @@ def parse_args() -> bool:
 
     elif args.rand_dig:
         if args.rand_dig > 0:
-            array = [number for number in range(1, args.rand_dig + 1)]
+            array = [number for number in
+                     range(-(args.rand_dig // 2), args.rand_dig // 2)]
 
             # Функция shuffle перемешивает изменяемую последовательность
             # случайным образом
