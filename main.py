@@ -7,6 +7,27 @@ import pygame as pg
 from typing import Union
 from random import shuffle
 
+from PIL import Image
+
+
+class CreatorGifImages:
+    def __init__(self, directory="gif"):
+        self.directory = directory
+        self.frames = []
+        self.frames_count = 0
+        self.gif_number = 1
+
+        self.path = self.create_path(directory)
+
+    def create_path(self, directory):
+        if os.path.exists(directory):
+            self.directory = directory
+        path = f"{self.directory}\\gif{self.gif_number}.gif"
+        while os.path.exists(path):
+            self.gif_number += 1
+            path = f"{self.directory}\\gif{self.gif_number}.gif"
+        return path
+
 
 def reading_file(file_name: str = "") -> Union[str, bool]:
     """Чтение строки из файла"""
@@ -33,9 +54,15 @@ def reading_file(file_name: str = "") -> Union[str, bool]:
     return string
 
 
+def add_frame_to_gif(data, width: int, height: int, gif):
+    image = Image.frombytes("RGBA", (width, height), data)
+    gif.frames_count += 1
+    gif.frames.append(image)
+
+
 def visualize_array(array: list, heap_size: int, length: int, width: int,
                     height: int, min_value: int, max_value: int,
-                    screen: pg.Surface):
+                    screen: pg.Surface, gif):
     norm_x = width / length
     norm_w = norm_x if norm_x > 1 else 1
     h_caf = (height - 100) / (max_value - min_value)
@@ -53,29 +80,52 @@ def visualize_array(array: list, heap_size: int, length: int, width: int,
             norm_y = zero_h
 
         if index != heap_size:
-            if index % 2:
-                cur_color = (140, 140, 140)
-            else:
-                cur_color = (160, 160, 160)
+            cur_color = (185, 185, 185)
         else:
             cur_color = (255, 0, 0)
 
         pg.draw.rect(screen, (255, 255, 255), (
             norm_x * index, 0, norm_w, height))
         pg.draw.rect(screen, cur_color, (norm_x * index, norm_y,
-                                              norm_w, norm_h))
+                                         norm_w, norm_h))
 
+        """
+        pg.draw.rect(screen, (0, 0, 0), (norm_x * index, norm_y - height,
+                                        norm_w, norm_h))
+        """
         pg.draw.line(screen, (255, 255, 255),
                      (0, zero_h), (width, zero_h), 2)
         pg.display.update()
 
+    if gif:
+        add_frame_to_gif(pg.image.tostring(screen, "RGBA"), width, height,
+                         gif)
+
     pg.time.wait(50)
+
+
+def create_gif(gif):
+    """
+    Метод сохранения гифки в директорию
+    """
+    print("Please, wait, started gif creation")
+    gif.frames[0].save(gif.path, save_all=True,
+                       append_images=gif.frames[1:],
+                       optimize=True,
+                       duration=100,
+                       loop=0)
+    print(f"Gif was successfully saved in {gif.directory} directory")
+    gif.frames[0].close()
+    gif.frames.clear()
+    gif.frames_count = 0
+    gif.gif_number += 1
 
 
 def sort_visualization(array: list, reverse: bool, make_gif: bool,
                        visualize: bool) -> list:
     """
     Функция отрисовки процесса сортировки
+    :param visualize:
     :param make_gif: Нужно ли делать gif-изображение
     :param array: Массив с данными для сортировки
     :param reverse: Порядок сортировки
@@ -84,6 +134,7 @@ def sort_visualization(array: list, reverse: bool, make_gif: bool,
 
     width = height = length = min_value = max_value = 0
     screen = None
+    gif = None
 
     if visualize:
         pg.init()
@@ -91,9 +142,14 @@ def sort_visualization(array: list, reverse: bool, make_gif: bool,
         min_value, max_value = min(array), max(array)
         length = len(array)
 
+        if make_gif:
+            gif = CreatorGifImages()
+
         # Инициализирует окно
         screen = pg.display.set_mode((width, height))
         pg.display.set_caption("SmoothSort")
+        bg_color = (255, 255, 255)
+        screen.fill(bg_color)
 
     # Куча будет храниться в виде списка деревьев Леонардо
     heap = []
@@ -226,7 +282,7 @@ def sort_visualization(array: list, reverse: bool, make_gif: bool,
             if visualize:
                 visualize_array(array, cur, length, width, height,
                                 min_value,
-                                max_value, screen)
+                                max_value, screen, gif)
 
             # Корень не меньше размера обоих потомков
             if cmp(key(array[left]), key(array[cur])) != reverse and \
@@ -276,9 +332,22 @@ def sort_visualization(array: list, reverse: bool, make_gif: bool,
 
         if visualize:
             visualize_array(array, heap_size, length, width, height, min_value,
-                            max_value, screen)
+                            max_value, screen, gif)
 
         _dequeue_max(heap_size)
+
+    running_visualization = True
+    while running_visualization:
+        pg.display.update()
+
+        for event in pg.event.get():
+
+            if event.type == pg.QUIT:
+                pg.quit()
+                running_visualization = False
+
+    if make_gif:
+        create_gif(gif)
 
     return array
 
