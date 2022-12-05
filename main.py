@@ -143,8 +143,12 @@ def sort_visualization(array: list, reverse: bool, make_gif: bool,
     if visualize:
         pg.init()
         width, height = 800, 600
-        min_value, max_value = min(array), max(array)
         length = len(array)
+
+        if length <= 1:
+            min_value = max_value = 0
+        else:
+            min_value, max_value = min(array), max(array)
 
         if make_gif:
             gif = CreatorGifImages()
@@ -341,14 +345,16 @@ def sort_visualization(array: list, reverse: bool, make_gif: bool,
         _dequeue_max(heap_size)
 
     running_visualization = True
-    while running_visualization:
-        pg.display.update()
 
-        for event in pg.event.get():
+    if visualize:
+        while running_visualization:
+            pg.display.update()
 
-            if event.type == pg.QUIT:
-                pg.quit()
-                running_visualization = False
+            for event in pg.event.get():
+
+                if event.type == pg.QUIT:
+                    pg.quit()
+                    running_visualization = False
 
     if make_gif:
         create_gif(gif)
@@ -407,18 +413,26 @@ def parse_args() -> bool:
             return False
 
     elif args.rand_dig:
-        if args.rand_dig > 0:
+        if args.rand_dig > 1:
+            first_half = args.rand_dig // 2
+            second_half = args.rand_dig - first_half
             array = [number for number in
-                     range(-(args.rand_dig // 2), args.rand_dig // 2)]
+                     range(-first_half, second_half)]
 
             # Функция shuffle перемешивает изменяемую последовательность
             # случайным образом
             shuffle(array)
 
+    if args.rand_dig in [0, 1]:
+        print("Слишком мало элементов для сортировки.")
+
+    print("Передано:")
+    print(array)
+
     sorted_array = sort_visualization(array, args.reverse, args.gif,
                                       args.visualize)
 
-    print("Результат:")
+    print("Результат сортировки:")
     print(sorted_array)
 
 
