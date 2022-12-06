@@ -11,21 +11,35 @@ from PIL import Image
 
 
 class CreatorGifImages:
-    def __init__(self, directory="gif"):
-        self.directory = directory
+    """
+    Класс, отвечающий за сохранение Gif-изображений
+    """
+
+    def __init__(self):
+        """
+        Конструктор класса, который будет сохранять гифки
+        """
         self.frames = []
         self.frames_count = 0
         self.gif_number = 1
 
-        self.path = self.create_path(directory)
+        self.path = self.create_path()
 
-    def create_path(self, directory):
-        if os.path.exists(directory):
-            self.directory = directory
-        path = f"{self.directory}\\gif{self.gif_number}.gif"
+    def create_path(self) -> str:
+        """
+        Метод создания пути к гифке
+        :return: путь к гифке
+        """
+        directory = "gif"
+
+        # Если папки .gif нет, то создаём её
+        if not os.path.exists(directory):
+            os.mkdir(directory)
+
+        path = f"{directory}\\gif{self.gif_number}.gif"
         while os.path.exists(path):
             self.gif_number += 1
-            path = f"{self.directory}\\gif{self.gif_number}.gif"
+            path = f"{directory}\\gif{self.gif_number}.gif"
         return path
 
 
@@ -54,7 +68,16 @@ def reading_file(file_name: str = "") -> Union[str, bool]:
     return string
 
 
-def add_frame_to_gif(data, width: int, height: int, gif):
+def add_img_to_gif(data, width: int, height: int,
+                   gif: CreatorGifImages) -> None:
+    """
+    Добавляет один кадр к гифке
+    :param data: кадр, добавляемый к гифке
+    :param width: ширина окна
+    :param height: высота окна
+    :param gif: экземпляр класса CreatorGifImages
+    :return:
+    """
     image = Image.frombytes("RGBA", (width, height), data)
     gif.frames_count += 1
     gif.frames.append(image)
@@ -62,22 +85,37 @@ def add_frame_to_gif(data, width: int, height: int, gif):
 
 def visualize_array(array: list, heap_size: int, length: int, width: int,
                     height: int, min_value: int, max_value: int,
-                    screen: pg.Surface, gif):
-    norm_x = width / length
-    norm_w = norm_x if norm_x > 1 else 1
+                    screen: pg.Surface, gif: CreatorGifImages) -> None:
+    """
+    Отрисовка нового состояния массива элементов.
+    :param array: массив
+    :param heap_size: переданный индекс
+    :param length: длина массива
+    :param width: ширина окна
+    :param height: высота окна
+    :param min_value: минимальное значение в массиве
+    :param max_value: максимальное значение в массиве
+    :param screen: pg.Surface, на котором происходит отрисовка изображения
+    :param gif: экземпляр класса CreatorGifImages
+    :return: None
+    """
+
+    normal_x = width / length
+    normal_w = normal_x if normal_x > 1 else 1
+
     h_caf = (height - 100) / (max_value - min_value)
 
     for index, value in enumerate(array):
-        norm_h = abs(value) * h_caf
+        normal_h = abs(value) * h_caf
 
         h_caf = (height - 100) / (max_value - min_value)
-        norm_min = min_value * h_caf
-        zero_h = height - 1 + norm_min
+        normal_min = min_value * h_caf
+        zero_height = height - 1 + normal_min
 
         if value > 0:
-            norm_y = height - norm_h - (height - zero_h)
+            normal_y = height - normal_h - (height - zero_height)
         else:
-            norm_y = zero_h
+            normal_y = zero_height
 
         if index != heap_size:
             cur_color = (185, 185, 185)
@@ -85,40 +123,44 @@ def visualize_array(array: list, heap_size: int, length: int, width: int,
             cur_color = (255, 0, 0)
 
         pg.draw.rect(screen, (255, 255, 255), (
-            norm_x * index, 0, norm_w, height))
-        pg.draw.rect(screen, cur_color, (norm_x * index, norm_y,
-                                         norm_w, norm_h))
+            normal_x * index, 0, normal_w, height))
+        pg.draw.rect(screen, cur_color, (normal_x * index, normal_y,
+                                         normal_w, normal_h))
 
         if value > 0:
-            sqrt_y = norm_y - norm_w
+            normal_y -= normal_w
         else:
-            sqrt_y = norm_y + norm_h - norm_w
+            normal_y += normal_h - normal_w
 
         pg.draw.rect(screen, (0, 0, 0),
-                     (norm_x * index, sqrt_y, norm_w, norm_w))
+                     (normal_x * index, normal_y, normal_w, normal_w))
 
         pg.draw.line(screen, (255, 255, 255),
-                     (0, zero_h), (width, zero_h), 2)
+                     (0, zero_height), (width, zero_height), 2)
+
         pg.display.update()
 
     if gif:
-        add_frame_to_gif(pg.image.tostring(screen, "RGBA"), width, height,
-                         gif)
+        add_img_to_gif(pg.image.tostring(screen, "RGBA"), width, height,
+                       gif)
 
     pg.time.wait(50)
 
 
-def create_gif(gif):
+def create_gif(gif: CreatorGifImages) -> None:
     """
     Метод сохранения гифки в директорию
     """
-    print("Please, wait, started gif creation")
+    print("Gif-изображение создаётся...")
+
     gif.frames[0].save(gif.path, save_all=True,
                        append_images=gif.frames[1:],
                        optimize=True,
                        duration=100,
                        loop=0)
-    print(f"Gif was successfully saved in {gif.directory} directory")
+
+    print("Gif-изображение было сохранено в директорию gif")
+
     gif.frames[0].close()
     gif.frames.clear()
     gif.frames_count = 0
@@ -287,6 +329,7 @@ def sort_visualization(array: list, reverse: bool, make_gif: bool,
             right = cur - 1
             left = cur - 1 - _get_leonardo_number(tree_size - 2)
 
+            # Отрисовываем состояние массива
             if visualize:
                 visualize_array(array, cur, length, width, height,
                                 min_value,
@@ -346,6 +389,7 @@ def sort_visualization(array: list, reverse: bool, make_gif: bool,
 
     running_visualization = True
 
+    # Отрисовка сортировки
     if visualize:
         while running_visualization:
             pg.display.update()
@@ -356,6 +400,7 @@ def sort_visualization(array: list, reverse: bool, make_gif: bool,
                     pg.quit()
                     running_visualization = False
 
+    # Создание Gif-изображения
     if make_gif:
         create_gif(gif)
 
